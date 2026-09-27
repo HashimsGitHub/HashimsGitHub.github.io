@@ -129,7 +129,9 @@
       .stats{grid-template-columns:repeat(2,1fr)} .featured-grid{grid-template-columns:1fr}
       .library-grid{grid-template-columns:repeat(2,1fr)} .capabilities{grid-template-columns:1fr} .cert-groups{grid-template-columns:1fr}
     }
-    @media(max-width:620px){.library-grid{grid-template-columns:1fr} .stats{grid-template-columns:1fr 1fr}}
+    @media(max-width:620px){.library-grid{grid-template-columns:1fr} .stats{grid-template-columns:1fr 1fr}
+      section[id]{scroll-margin-top:82px}
+    }
 
     /* ===== SCROLL REVEAL ===== */
     .reveal{opacity:0;transform:translateY(30px);transition:opacity 1s cubic-bezier(.2,.9,.4,1), transform 1s cubic-bezier(.2,.9,.4,1)}
@@ -487,7 +489,7 @@ const revealObserver = new IntersectionObserver((entries) => {
       revealObserver.unobserve(entry.target);
     }
   });
-}, { threshold: 0.1, rootMargin: '0px 0px -50px 0px' });
+}, { threshold: 0, rootMargin: '0px 0px -50px 0px' });
 revealElements.forEach(el => revealObserver.observe(el));
 
 // 2. Animated counters
