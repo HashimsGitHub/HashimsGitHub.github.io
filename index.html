@@ -378,7 +378,7 @@
       </div>
       <div class="filters" id="filters"></div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px">
-        <input class="search" id="search" type="search" placeholder="Search projects, technologies, account or category…" />
+        <input class="search" id="search" aria-label="Search projects" type="search" placeholder="Search projects, technologies, account or category…" />
       </div>
       <div id="libraryGrid" class="library-grid"></div>
     </section>
@@ -410,6 +410,7 @@ const PROJECTS_URL = "https://myresearchdata.blob.core.windows.net/portfolio/pro
 let projects = [];
 let categories = ["All"];
 let activeCategory = "All";
+let libraryRenderTimer;
 
 async function loadProjects() {
 
@@ -438,23 +439,36 @@ async function loadProjects() {
       );
     }
 
-    projects = await response.json();
+    const data = await response.json();
+    if (!Array.isArray(data)) {
+      throw new Error("Project data must be a JSON array.");
+    }
+    projects = data.filter(p => p && typeof p === "object").map(p => ({
+      ...p,
+      title: String(p.title || "Untitled project"),
+      category: String(p.category || "Other"),
+      source: String(p.source || ""),
+      account: String(p.account || ""),
+      description: String(p.description || ""),
+      stack: Array.isArray(p.stack) ? p.stack.map(String) : []
+    }));
 
-  categories = [
-    "All",
-    ...new Set(
-      projects
-        .filter(p => p.category !== "Profile")
-        .map(p => p.category)
-    )
-  ];
+    categories = [
+      "All",
+      ...new Set(
+        projects
+          .filter(p => p.category !== "Profile")
+          .map(p => p.category)
+      )
+    ];
 
-  // 6. Load projects from JSON
-  loadProjects();
+    renderFeatured();
+    renderFilters();
+    renderLibrary();
 
-  console.log(
-  `Loaded ${projects.length} projects`
-);
+    console.log(
+      `Loaded ${projects.length} projects`
+    );
 
   }
   catch (error) {
@@ -468,7 +482,7 @@ async function loadProjects() {
       <div class="panel">
         <h3>Unable to load portfolio data</h3>
         <p class="small">
-          Verify projects.json is publicly accessible and Azure Blob Storage CORS is configured correctly.
+          Projects could not be loaded. Please refresh the page or try again later.
         </p>
       </div>
     `;
@@ -491,7 +505,7 @@ function projectCard(p, compact=false) {
     : `<div class="fallback">${esc(initials(p.title))}</div>`;
   const links = `
     <div class="links">
-      <a href="${esc(p.github)}" target="_blank" rel="noopener">GitHub ↗</a>
+      ${p.github ? `<a href="${esc(p.github)}" target="_blank" rel="noopener">GitHub ↗</a>` : ""}
       ${p.live ? `<a href="${esc(p.live)}" target="_blank" rel="noopener">Live project ↗</a>` : ""}
       ${p.club ? `<a href="${esc(p.club)}" target="_blank" rel="noopener">QUT AIML archive ↗</a>` : ""}
     </div>`;
@@ -516,7 +530,8 @@ function projectCard(p, compact=false) {
 
 function renderFeatured() {
   document.getElementById("featuredGrid").innerHTML =
-    projects.filter(p => p.featured).map(p => projectCard(p,false)).join("");
+    projects.filter(p => p.featured).map(p => projectCard(p,false)).join("") ||
+    '<p class="small">No featured projects available.</p>';
 }
 
 function renderFilters() {
@@ -536,8 +551,9 @@ function renderLibrary() {
   });
   const grid = document.getElementById("libraryGrid");
   grid.classList.add("fade-out");
-  setTimeout(() => {
-    grid.innerHTML = visible.map(p => projectCard(p,true)).join("");
+  clearTimeout(libraryRenderTimer);
+  libraryRenderTimer = setTimeout(() => {
+    grid.innerHTML = visible.map(p => projectCard(p,true)).join("") || '<p class="small">No projects match your search.</p>';
     grid.classList.remove("fade-out");
   }, 150);
 }
@@ -636,10 +652,8 @@ window.addEventListener('scroll', () => {
   }
 });
 
-// 6. Initial render
-renderFeatured();
-renderFilters();
-renderLibrary();
+// 6. Load project data once on startup
+loadProjects();
 </script>
 </body>
 </html>
