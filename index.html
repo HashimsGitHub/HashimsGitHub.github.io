@@ -440,22 +440,21 @@ async function loadProjects() {
 
     projects = await response.json();
 
-    categories = [
-      "All",
-      ...new Set(
-        projects
-          .filter(p => p.category !== "Profile")
-          .map(p => p.category)
-      )
-    ];
+  categories = [
+    "All",
+    ...new Set(
+      projects
+        .filter(p => p.category !== "Profile")
+        .map(p => p.category)
+    )
+  ];
 
-   // 6. Load projects from Azure Blob
+  // 6. Load projects from JSON
+  loadProjects();
 
-   loadProjects();
-
-    console.log(
-      `Loaded ${projects.length} projects`
-    );
+  console.log(
+  `Loaded ${projects.length} projects`
+);
 
   }
   catch (error) {
